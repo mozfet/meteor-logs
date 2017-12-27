@@ -1,7 +1,7 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
   summary: 'Polymorphic colored tagable filtered logging for Meteor on MongoDB and the console.',
-  version: '0.0.2',
+  version: '0.0.3',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 

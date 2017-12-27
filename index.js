@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 
-import LogApi from 'imports/api/log';
+import LogApi from './imports/api/log';
 import Access from 'meteor/access';
 
 // export default log api

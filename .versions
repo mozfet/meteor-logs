@@ -21,7 +21,7 @@ meteor@1.8.2
 modules@0.11.2
 modules-runtime@0.9.1
 mongo-id@1.0.6
-mozfet:meteor-logs@0.0.2
+mozfet:meteor-logs@0.0.3
 observe-sequence@1.0.16
 promise@0.10.0
 random@1.0.10
