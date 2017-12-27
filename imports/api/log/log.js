@@ -1,4 +1,5 @@
 /*jshint esversion: 6 */
+import Access from './access.js';
 
 /**
  * Muted tags are not logged on the console, but they are logged in the DB
