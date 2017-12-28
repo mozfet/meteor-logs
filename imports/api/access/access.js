@@ -33,11 +33,9 @@ const isUser = (userId) => {
  */
 const userLabel = (userId) => {
   const user = Meteor.users.findOne(userId);
-  console.log('######user', user);
   const emails = _.map(user.emails, (email) => {
     return email.address;
   });
-  console.log('######emails', emails);
   return _.first(emails);
 };
 

@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */
 import Sinon from 'sinon';
-import Log from './log.js';
+import Log from '../imports/api/log';
 
 /**
  * Stub for Log module. Should be used by other modules during unit testing.

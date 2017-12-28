@@ -101,11 +101,11 @@ Log.log(['veryBusy'], 'And can be unmuted when appropriate');
 Easily change the color and background of a tag on the console.
 
 ```
-Log.color('error', Chalk.black, Chalk.bgRed);
-Log.color('myTag', Chalk.white, Chalk.bgGreen);
-Log.log(['error', 'myTag'], 'Colors can be added to any tag');
+Log.color('error', 'black', 'red');
+Log.color('myTag', 'white', 'green');
+Log.log(['error', 'myTag'], 'Colors can be added to any tag.');
 Log.color('error');
-Log.color('myTag', Chalk.green, Chalk.bgBlack);
+Log.color('myTag', 'green', 'black');
 Log.error('Colors can be reset or changed at any time');
 ```
 

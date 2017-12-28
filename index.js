@@ -1,67 +1,63 @@
 /*jshint esversion: 6 */
-
+import { Mongo } from 'meteor/mongo';
 import LogApi from './imports/api/log';
-import Access from 'meteor/access';
+import Access from './imports/api/access';
+import renameKeys from 'deep-rename-keys';
 
-// export default log api
-export default LogApi;
-
-// define mongo db
-Logs = new Mongo.Collection('Logs');
-
-// define global Log
+// export log api
 Log = LogApi;
 
 // on meteor startup
-Meteor.onStartup(() => {
+// Meteor.startup(() => {
 
+  // define global mongo db collection
+  Logs = new Mongo.Collection('Logs');
 
-
-  // if server
-  if (Meteor.isServer) {
-
-    const normalizeForPersistance = (document) => {
-      renameKeys(document, function(key) {
-        switch(key) {
-          case '$set': return 'SET';
-          case '$push': return 'PUSH';
-          default: return key;
-        }
-      });
-    };
-
-    // define access
-    //define meteor methods
-    Meteor.methods({
-      log: (channels, message, data) => {
-
-        //normalise the data for persistance
-        const normalizedData = normalizeForPersistance(data);
-
-        //insert log into db
-        Logs.insert({
-          time: new Date(),
-          userId: Meteor.userId(),
-          channels: channels,
-          message: message,
-          data: normalizedData
-        });
-      },
-      'log.channels': () => {
-        let channels = Logs.aggregate([
-          {$unwind: '$channels'},
-          {$group: {_id: '$channels'}}
-        ]);
-        channels = _.map(channels, (channel) => {return channel._id;});
-        console.log('log.channels:', channels);
-        return channels;
-      },
-      'log.clear': () => {
-        Logs.remove({});
+  // function to prepare data for persistance
+  const normalizeForPersistance = (document) => {
+    renameKeys(document, function(key) {
+      switch(key) {
+        case '$set': return 'SET';
+        case '$push': return 'PUSH';
+        default: return key;
       }
     });
+  };
 
-    // allow any client to insert logs, but only admin can update and remove
+  // define meteor methods
+  Meteor.methods({
+    log: (channels, message, data) => {
+
+      //normalise the data for persistance
+      const normalizedData = normalizeForPersistance(data);
+
+      //insert log into db
+      Logs.insert({
+        time: new Date(),
+        userId: Meteor.userId(),
+        channels: channels,
+        message: message,
+        data: normalizedData
+      });
+    },
+    'log.channels': () => {
+      let channels = Logs.aggregate([
+        {$unwind: '$channels'},
+        {$group: {_id: '$channels'}}
+      ]);
+      channels = _.map(channels, (channel) => {return channel._id;});
+      console.log('log.channels:', channels);
+      return channels;
+    },
+    'log.clear': () => {
+      Logs.remove({});
+    }
+  });
+
+  // if in meteor server environment
+  if (Meteor.isServer) {
+
+    // allow on admin to insert, update and remove on client
     Logs.allow(Access.anyInsertAdminUpdateRemove);
   }
-});
+// });

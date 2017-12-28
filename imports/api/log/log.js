@@ -1,5 +1,11 @@
 /*jshint esversion: 6 */
-import Access from './access.js';
+import { _ } from 'underscore';
+import { Meteor } from 'meteor/meteor';
+import Chalk from 'chalk';
+import ansiHTML from 'ansi-html';
+
+// init chalk instance and force it to use 256 colors
+const chalk = new Chalk.constructor({enabled: true, level: 2});
 
 /**
  * Muted tags are not logged on the console, but they are logged in the DB
@@ -21,37 +27,31 @@ const show = (tags) => {
 /**
  * Color a tag using Chalk.
  * @param {string} tag - The tag that will get a color assigned.
- * @param {function} color - The Chalk color, e.g. Chalk.black.
- * @param {function} bgColor - The Chalk background color, e.g Chalk.bgYellow.
+ * @param {string} color - The Chalk color, e.g. 'black'.
+ * @param {string} bgColor - The Chalk background color, e.g 'bgYellow'.
  * @see {@link https://github.com/chalk/chalk|Chalk}
  * @example
- * // in terminal console:
- * //   $ meteor npm import chalk --save
- * //   $ meteor npm import meteor-logs --save
- * // anywhere in client or server code:
- * // import Chalk from 'chalk';
- * // import Log from 'meteor-logs';
- * // Log.color('error', Chalk.black, Chalk.bgRed);
+ * // Log.color('error', 'white', 'bgRed);
  * // Log.log(['error'], 'This error and all following logs with error tags');
- * // Log.log(['error'], 'will be black text on a red background.');
+ * // Log.log(['error'], 'will be white text on a red background.');
  * @returns {undefined} Returns undefined.
  *
  **/
 let colors = {};
-const colour = (tag, color, bgColor) => {
+const color = (tag, color, bgColor) => {
 
   // find or create object using tag as color key
   let obj = colors[tag] = tag&&colors[tag]?colors[tag]:{};
 
   // if a color is provided
-  if(color && _.isFunction(color)) {
+  if(color && _.isString(color)) {
 
     // assign the color to the tag color object
     obj.color = color;
   }
 
   // if a background color is provided
-  if (bgColor && _.isFunction(bgColor)) {
+  if (bgColor && _.isString(bgColor)) {
 
     // assign the background color to the object
     obj.bgColor = bgColor;
@@ -77,8 +77,10 @@ const log = (tags, message, ...data) => {
     return undefined;
   }
 
-  // for each tag
+  //define ES2015 template literal for use with Chalk
   let tagString = '';
+
+  // for each tag
   for (let tag of tags) {
 
     // find color object
@@ -87,35 +89,39 @@ const log = (tags, message, ...data) => {
     // if color object exists
     if (obj) {
 
-      const isColor = _.isFunction(obj.color);
-      const isBgColor = _.isFunction(obj.bgColor);
+      const isColor = _.isString(obj.color);
+      const isBgColor = _.isString(obj.bgColor);
 
       // if text color and bgColor
       if (isColor && isBgColor) {
 
         // nested chalk tag using color in bgColor
-        tagString += ' ' + obj.bgColor(obj.color(tag)) + ' ';
+        // const f_color = chalk.keyword(obj.color);
+        // const f_bgColor = chalk.bgKeyword(obj.bgColor);
+        // const colorTag = f_color(f_bgColor(tag));
+        // tagString += `${colorTag} `;
+        tagString += `${chalk.keyword(obj.color)(chalk.bgKeyword(obj.bgColor)(tag))} `;
       }
 
       // else if text color is a function
       else if (isColor) {
 
         // chalk and append tag with color to tag string
-        tagString += obj.color(tag);
+        tagString += `${chalk.keyword(obj.color)(tag)} `;
       }
 
       // else if background color is a function
       else if (isBgColor) {
 
         // chalk and append tag with background color to tag string
-        tagString += obj.bgColor(tag);
+        tagString += `${chalk.bgKeyword(obj.bgColor)(tag)} `;
       }
 
       // else
       else {
 
         // append the tag
-        tagString += tag;
+        tagString += tag+' ';
       }
     }
 
@@ -123,21 +129,50 @@ const log = (tags, message, ...data) => {
     else {
 
       // append the tag
-      tagString += tag;
+      tagString += tag+' ';
     }
   }
 
-  const args = data.length>0?[tagString, message, ...data]:[tagString, message];
+  // trim whitespace of tag string
+  tagString = tagString.trim();
+
+  // add seperator to tagString
+  tagString = _.isEmpty(tagString)?'':tagString+':';
+
+  // if tag string is empty
+  let args;
+  if (_.isEmpty(tagString)) {
+
+    // pack args without tag string
+    args = data.length>0?[message, ...data]:[message];
+  }
+  else {
+
+    // if client environment
+    if (Meteor.isClient) {
+
+      // convert ansi tag string to html
+      tagString = ansiHTML(tagString);
+      console.log('tagString.HTML:', tagString);
+    }
+
+    // pack args with tag string
+    args = data.length>0?[tagString, message, ...data]:[tagString, message];
+  }
+
+  // if one of the tags is error
   if (_.contains(tags, 'error')) {
+
+    // always log an error on the console
     console.error(...args);
   }
   else {
 
     //if none of the tags are in the do not log list
-    const tagsInTheDoNotLogOnConsoleList = _.filter(tags, (tag) => {
-      return _.contains(doNotLogOnConsoleList, tag);
+    const muted = _.filter(tags, (tag) => {
+      return _.contains(mutedTags, tag);
     });
-    if (tagsInTheDoNotLogOnConsoleList.length === 0) {
+    if (muted.length === 0) {
 
       //log on console using default io streams
       if (_.contains(tags, 'warning')) {
@@ -148,6 +183,9 @@ const log = (tags, message, ...data) => {
       }
       else {
         console.log(...args);
+
+        // console.log(Chalk`{red AHA}`);
+        // console.log(chalk.keyword('orange')('Yay for orange colored text!'));
       }
     }
   }
@@ -199,5 +237,6 @@ export default {
   info: info,
   warn: warn,
   error: error,
-  debug: debug
+  debug: debug,
+  color: color
 };
