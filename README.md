@@ -1,24 +1,88 @@
 # meteor-logs
 
-Real cross platform logs for Meteor. With multiple mutable colored tags and
-managed console streams, it quick to install and easy to use, ideal for test
-driven development and production logging.
+Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.
 
-Logs can be created from anywhere in client and server, startup and runtime,
+Features include filtered color tags, managed io-streams and indenting on the console. Cross platform logs are stored in MongoDB and presented to admin users using Blaze templates.
+
+Ideal for test driven development, logging intensive applications, and production monitoring.
+
+Logs can be created from anywhere in client or server code, startup and runtime,
 even inside methods. Logs with debug tags are automatically and completely
-ignored on production environments. Database logs are only accessible by Meteor
-users with admin roles.
+ignored on production environments. Logs with error tags automatically throw errors, and cross platform logs are only accessible by Meteor users with admin
+roles.
 
 Templates are included for logging from Blaze templates, and for searching and
 presenting filtering logs. (Coming Soon)
 
-## Base API
+## Sponsor
 
-The API provides support for colored tagged logs with human messages and
-flexible data.
+> **Thank You** This open source library was created by [ExpertBox.com](http://www.ExpertBox.com) as a 'thank you' to the Open Source community.
+
+## Showcase
+
+![Screenshot on Chrome Console on OSX](assets/chrome-console.png)
+![Screenshot on Server Terminal Console on OSX](assets/bash-terminal.png)
+
 ```
-Log.color('error', Chalk.black, Chalk.bgRed);
-Log.log(['tag1', 'tag2'], 'Human message.', 'some', 'data', {foo: 'bar'}, 42);
+Log.log([], 'No tags.');
+
+Log.log(['tag1', 'tag2'], 'Custom tags without colors.');
+
+Log.info('Information without colors.');
+Log.debug('Debug without colors.');
+Log.warn('Warning without colors.');
+try {Log.error('Error without colors.');} catch (e) {}
+
+Log.color('error', 'white', 'red');
+Log.color('warning', 'white', 'orange');
+Log.color('information', 'black', 'green');
+Log.color('debug', 'black', 'yellow');
+Log.color('error', 'white', 'red');
+Log.color('tag1', 'yellow', 'purple');
+Log.color('tag2', 'purple');
+
+Log.log(['tag1', 'tag2'], 'Custom tags with colors.');
+
+Log.info('Information with colors.');
+Log.debug('Debug with colors.');
+Log.warn('Warning with colors.');
+try {
+  Log.error('Error with colors.');
+}
+catch (e) {}
+
+Log.messageIndent(25);
+Log.standardStreams(false);
+
+Log.log([], 'No tags indented not using standard streams.');
+Log.info('Information with colors indented not using standard streams.');
+Log.debug('Debug with colors indented not using standard streams.');
+Log.warn('Warning with colors indented not using standard streams.');
+try {
+  Log.error('Error with colors indented not using standard streams.');
+}
+catch (e) {}
+
+Log.log(['debug', 'tag1', 'tag2'],
+    'Debug with custom tags and colors.');
+Log.log(['warning', 'tag1', 'tag2'],
+    'Warning with custom tags and colors.');
+Log.log(['information', 'tag1', 'tag2', ],
+    'Information with custom tags and colors.');
+try {Log.log(['error', 'tag1', 'tag2'],
+    'Error with custom tags and colors.');} catch (e) {}
+
+Log.log(['debug', 'tag1', 'tag2'],
+    'Debug with custom tags and colors and data literal.', 42);
+Log.log(['warning', 'tag1', 'tag2'],
+    'Warning with custom tags and colors and data array.', [1,2,3,4]);
+Log.log(['information', 'tag1', 'tag2', ],
+    'Information with custom tags and colors and data object.', {foo: ['bar']});
+try {
+  Log.log(['error', 'tag1', 'tag2'],
+    'Error with custom tags and colors and data.', [{foo: 'bar'}, ['foo'], 42]);
+}
+catch (e) {}
 ```
 
 ## Polimorphic
@@ -28,16 +92,15 @@ Works the same anywhere in a Meteor client or server
 Log.info('All logs on the server and client (except debug on prod) are stored '+
     'in the \'Log\' MongoDB collection.');
 Meteor.onStartup(() => {
+  Meteor.methods({myMethod: ()=>{Log.info('wow')}};
   if (Meteor.isServer) {
-    Log.info('Logs on the server does not show on the client console');
-
-    Meteor.methods({myMethod: ()=>{Log.info('wow')}};    
+    Log.info('Logs on the server does not show on the client console');    
   }
   else if (Meteor.isClient) {
     Log.info('Logs on the client does not show on the server console');
-  }  
+    Meteor.call('myMethod');
+  }
 });
-
 ```
 
 ## Managed console log streams
@@ -72,6 +135,20 @@ Log.log(['debug', 'tag1'], 'Log on console error stream and the database',
     'some', 'data');
 ```
 
+Disable standard streams to work well with indents, default is true. When
+standard streams are not used, all console logs are on the standard log stream, this includes errors and warnings.
+```
+Log.standardStreams(false);
+```
+
+## Message Indenting
+
+To improve message readability, indenting can be used, default is 0. When using indents it helps to disable standard streams to remove all decorations consoles add for STDERR stream.
+```
+Log.standardStreams(false);
+Log.messageIndent(25);
+```
+
 ## Smart Debug
 
 Debug logs are completely auto ignored in production environments
@@ -83,6 +160,10 @@ Log.log(['debug', 'someFeature'],
     {foo: ['bar']}, 'loads of other objects and arrays and literals',
     ['A', 'B', {C: 'C'}] , 42);
 ```
+
+## Smart Errors
+
+Logging an error automatically throws an exception.
 
 ## Tag filtering on the console
 
@@ -99,7 +180,6 @@ Log.log(['veryBusy'], 'And can be unmuted when appropriate');
 ## Color tags on the console
 
 Easily change the color and background of a tag on the console.
-
 ```
 Log.color('error', 'black', 'red');
 Log.color('myTag', 'white', 'green');
@@ -129,8 +209,6 @@ $ meteor add mozfet:meteor-logs
 
 In client or server code using the global object:
 ```
-import Chalk from 'chalk';
-Log.color('information', Chalk.black, Chalk.bgYellow);
 Log.info('Using Atmosphere makes it easy.');
 ```
 
@@ -148,8 +226,6 @@ $ meteor npm import meteor-logs --save
 
 Inside any code on the client or server:
 ```
-import Chalk from 'chalk';
 import Log from 'meteor-logs';
-Log.color('information', Chalk.black, Chalk.bgYellow);
 Log.info('Using Node Package Manager makes it standard.');
 ```

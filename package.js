@@ -1,14 +1,14 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
-  summary: 'Polymorphic colored tagged filtered logging for Meteor on MongoDB, server terminal and browser console.',
-  version: '0.0.4',
+  summary: 'Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.',
+  version: '0.1.0',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 
 Npm.depends({
   'chalk': '2.3.0',
   'deep-rename-keys': '0.2.1',
-  'ansi-html': '0.0.7'
+  'ansi_up': '2.0.2'
 });
 
 Package.onUse(function(api) {
