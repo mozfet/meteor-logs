@@ -1,7 +1,7 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
   summary: 'Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.',
-  version: '0.1.0',
+  version: '0.1.1',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 

@@ -20,9 +20,13 @@ presenting filtering logs. (Coming Soon)
 
 ## Showcase
 
-![Screenshot on Chrome Console on OSX](assets/chrome-console.png)
-![Screenshot on Server Terminal Console on OSX](assets/bash-terminal.png)
+### Client - Browser JavaScript Console (tested on Chrome)
+![Screenshot Chrome Console on OSX](assets/chrome-console.png)
 
+### Server - Bash Command Line Terminal (tested on OSX)
+![Screenshot Server Terminal Console on OSX](assets/bash-terminal.png)
+
+### Code
 ```
 Log.log([], 'No tags.');
 
@@ -85,7 +89,7 @@ try {
 catch (e) {}
 ```
 
-## Polimorphic
+## Polymorphic
 
 Works the same anywhere in a Meteor client or server
 ```
