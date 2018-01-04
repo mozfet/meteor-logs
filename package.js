@@ -1,7 +1,7 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
   summary: 'Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.',
-  version: '0.1.1',
+  version: '0.1.2',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 
@@ -18,6 +18,25 @@ Package.onUse(function(api) {
   api.use('ecmascript@0.7.2');
   api.addFiles([
     'index.js'
+  ], ['client', 'server']);
+  api.export('Log', ['client', 'server']);
+});
+
+Package.on_test(function(api) {
+  api.use(
+    [
+      'tinytest',
+      'test-helpers',
+      'accounts-base',
+      'underscore',
+      'babel-runtime'
+    ],
+    ['client', 'server']
+  );
+  api.use('ecmascript@0.7.2');
+  api.addFiles([
+    'index.js',
+    './test/log.test.js'
   ], ['client', 'server']);
   api.export('Log', ['client', 'server']);
 });

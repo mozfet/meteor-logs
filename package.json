@@ -1,0 +1,28 @@
+{
+  "name": "meteor-logs",
+  "version": "0.1.2",
+  "description": "The Expert Box is new concept in the developing field of knowledge automation.",
+  "main": "index.js",
+  "dependencies": {
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "faker": "4.1.0",
+    "has-ansi": "3.0.0",
+    "sinon": "3.1.0"
+  },
+  "scripts": {
+    "test": "meteor test-packages ./",
+    "deploy": "meteor publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mozfet/meteor-logs.git"
+  },
+  "author": "The Expert Box B.V.",
+  "license": "SEE LICENCE IN LICENCE.md",
+  "bugs": {
+    "url": "https://github.com/mozfet/meteor-logs/issues"
+  },
+  "homepage": "https://github.com/mozfet/meteor-logs#readme"
+}

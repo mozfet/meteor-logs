@@ -21,13 +21,16 @@ function styledConsoleLog() {
         var endTagRe = /<\/span>/gi;
 
         var reResultArray;
-        argArray.push(arguments[0].replace(startTagRe, '%c').replace(endTagRe, '%c'));
+        argArray.push(arguments[0].replace(startTagRe, '%c').
+            replace(endTagRe, '%c'));
         while (reResultArray = startTagRe.exec(arguments[0])) {
             argArray.push(reResultArray[2]);
             argArray.push('');
         }
 
-        // pass through subsequent args since chrome dev tools does not (yet) support console.log styling of the following form: console.log('%cBlue!', 'color: blue;', '%cRed!', 'color: red;');
+        // pass through subsequent args since chrome dev tools does not (yet)
+        // support console.log styling of the following form:
+        //   console.log('%cBlue!', 'color: blue;', '%cRed!', 'color: red;');
         for (var j = 1; j < arguments.length; j++) {
             argArray.push(arguments[j]);
         }
@@ -63,11 +66,200 @@ const mute = (tags) => {
 };
 
 /**
- * Unmute tags
+ * Unmute tags.
  * @param {string[]} tags - The tags to show on the console.
  **/
 const show = (tags) => {
   mutedTags = _.without(mutedTags, ...tags);
+};
+
+/**
+ * Show all tags.
+ **/
+const showAll = () => {
+  mutedTags = [];
+};
+
+/**
+ * Build a tag string with colors for the platform and environment
+ * @param {string[]} tags - The tags to build a string for.
+ * @returns {string} The tag string to log on the console.
+ **/
+const buildTagString = (tags) => {
+
+   // for each tag
+   let tagString = '';
+   for (let tag of tags) {
+
+     // find color object
+     const obj = colors[tag];
+
+     // if color object exists
+     if (obj) {
+
+       const isColor = _.isString(obj.color);
+       const isBgColor = _.isString(obj.bgColor);
+
+       // if text color and bgColor
+       if (isColor && isBgColor) {
+
+         // nested chalk tag using color in bgColor
+         tagString +=
+             `${chalk.keyword(obj.color)(chalk.bgKeyword(obj.bgColor)(tag))} `;
+       }
+
+       // else if text color is a function
+       else if (isColor) {
+
+         // chalk and append tag with color to tag string
+         tagString += `${chalk.keyword(obj.color)(tag)} `;
+       }
+
+       // else if background color is a function
+       else if (isBgColor) {
+
+         // chalk and append tag with background color to tag string
+         tagString += `${chalk.bgKeyword(obj.bgColor)(tag)} `;
+       }
+
+       // else
+       else {
+
+         // append the tag
+         tagString += tag+' ';
+       }
+     }
+
+     // else
+     else {
+
+       // append the tag
+       tagString += tag+' ';
+     }
+   }
+
+   // trim whitespace of tag string
+   tagString = tagString.trim();
+
+   //return tag string
+   return tagString;
+};
+
+/**
+ * Build an indented message.
+ * @param {string} tagString - The tag string to offset the indent.
+ * @param {string} message - The plain unindented message.
+ * @param {number} messageIndent - The left indent offset.
+ * @return {string} - The indented message.
+ **/
+const buildMessageString = (tags, tagString, message, messageIndent) => {
+
+  // if tag string is empty
+  if (_.isEmpty(tagString)) {
+
+    // if indenting
+    if (messageIndent>0) {
+
+      // generate padding
+      let padding = '';
+      const iSize = Meteor.isServer?(messageIndent+3):(messageIndent+2);
+      for(let i = 0; i < iSize; i++) { padding+=' '; }
+
+      // left pad the message
+      message = padding + ': '+ message;
+    }
+
+    // else - message is not indented
+    else {
+
+      // add seperator
+      message = message;
+    }
+  }
+
+  // else - there is a tag string
+  else {
+
+    // if message is indented
+    if (messageIndentSize>0) {
+
+      // calculate the string lengths of tags
+      let tagsLength = 0;
+      for(let tag of tags) {
+        tagsLength += tag.length+1;
+      }
+      tagsLength-=1;
+
+      // calculate padding size
+      let paddingSize = messageIndentSize - tagsLength;
+
+      // normalise padding
+      paddingSize = paddingSize>0?paddingSize:0;
+
+      // generate padding
+      let padding = '';
+      for(let i = 0; i < paddingSize; i++) { padding+=' '; }
+
+      // left pad the message
+      message = padding + ': ' + message;
+    }
+
+    // else - message is not indented
+    else {
+
+      // add seperator
+      message = ': ' + message;
+    }
+  }
+
+  return message;
+};
+
+/**
+ * Returns true if this log entry should be streamed to the console
+ * @param {string[]} tags - the tags used to decide whether or not to stream
+ * @returns {boolean} - true if the entry should be streamed
+ **/
+const logOnConsole = (tags) => {
+
+  // if tags include debug
+  if (_.contains(tags, 'debug')) {
+
+    // if environment is PROD
+    if (Meteor.settings.public.isProduction) {
+
+      // return false
+      return false;
+    }
+  }
+
+  // if there are muted tags
+  if (mutedTags.length > 0) {
+
+    // if any of the tags are in the muted tags list
+    const mutedTag = _.find(tags, (tag) => {
+      return _.contains(mutedTages, 'tag');
+    });
+    if (mutedTag) {
+
+      //return false
+      return false;
+    }
+
+    //else
+    else {
+
+      //return true
+      return true;
+    }
+  }
+
+  // else - there are no muted tags
+  else {
+
+    // return true
+    return true;
+  }
 };
 
 /**
@@ -116,139 +308,26 @@ const color = (tag, color, bgColor) => {
  **/
 const log = (tags, message, ...data) => {
 
-  // if tags contain debug and this is a production envorinment
-  if (Meteor.settings.public.isProduction && _.contains(tags, 'debug')) {
+  // if logging on the console
+  if (logOnConsole(tags)) {
 
-    // do nothing
-    return undefined;
-  }
+    // define ES2015 template literal for use with Chalk
+    let tagString = buildTagString(tags);
 
-  // define ES2015 template literal for use with Chalk
-  let tagString = '';
-
-  // for each tag
-  for (let tag of tags) {
-
-    // find color object
-    const obj = colors[tag];
-
-    // if color object exists
-    if (obj) {
-
-      const isColor = _.isString(obj.color);
-      const isBgColor = _.isString(obj.bgColor);
-
-      // if text color and bgColor
-      if (isColor && isBgColor) {
-
-        // nested chalk tag using color in bgColor
-        tagString += `${chalk.keyword(obj.color)(chalk.bgKeyword(obj.bgColor)(tag))} `;
-      }
-
-      // else if text color is a function
-      else if (isColor) {
-
-        // chalk and append tag with color to tag string
-        tagString += `${chalk.keyword(obj.color)(tag)} `;
-      }
-
-      // else if background color is a function
-      else if (isBgColor) {
-
-        // chalk and append tag with background color to tag string
-        tagString += `${chalk.bgKeyword(obj.bgColor)(tag)} `;
-      }
-
-      // else
-      else {
-
-        // append the tag
-        tagString += tag+' ';
-      }
-    }
-
-    // else
-    else {
-
-      // append the tag
-      tagString += tag+' ';
-    }
-  }
-
-  // trim whitespace of tag string
-  tagString = tagString.trim();
-
-  // if tag string is empty
-  let args, tagArgs;
-  if (_.isEmpty(tagString)) {
-
-    // if indenting
-    if (messageIndentSize>0) {
-
-      // generate padding
-      let padding = '';
-      const iSize = Meteor.isServer?(messageIndentSize+3):(messageIndentSize+2);
-      for(let i = 0; i < iSize; i++) { padding+=' '; }
-
-      // left pad the message
-      message = padding + ': '+ message;
-    }
-
-    // else - message is not indented
-    else {
-
-      // add seperator
-      message = message;
-    }
-
-    // pack args without tags
-    args = data.length>0?[message, ...data]:[message];
-  }
-
-  // else - there is a tag string
-  else {
-
-    // if message is indented
-    if (messageIndentSize>0) {
-
-      // calculate the string lengths of tags
-      let tagsLength = 0;
-      for(let tag of tags) {
-        tagsLength += tag.length+1;
-      }
-      tagsLength-=3;
-
-      // calculate padding size
-      let paddingSize = messageIndentSize - tagsLength;
-
-      // normalise padding
-      paddingSize = paddingSize>0?paddingSize:0;
-
-      // generate padding
-      let padding = '';
-      for(let i = 0; i < paddingSize; i++) { padding+=' '; }
-
-      // left pad the message
-      message = padding + ': ' + message;
-    }
-
-    // else - message is not indented
-    else {
-
-      // add seperator
-      message = ': ' + message;
-    }
+    // prepend tag string, indent and pack message
+    let indentedMessage = buildMessageString(tags, tagString, message,
+        messageIndentSize);
 
     // if client environment
+    let args, tagArgs;
     if (Meteor.isClient) {
 
       // convert ansi tag string to html
       const tagHtml = ansi_up.ansi_to_html(tagString);
       tagArgs = styledConsoleLog(tagHtml);
-      // console.log('tagArgs:', tagArgs);
 
       // add message string to the first tag argument
-      tagArgs[0] = tagArgs[0] + message;
+      tagArgs[0] = tagArgs[0] + indentedMessage;
 
       // pack args with deconstructed tag args and data
       args = data.length>0?[...tagArgs, ...data]:[...tagArgs];
@@ -262,55 +341,37 @@ const log = (tags, message, ...data) => {
       if (Meteor.isServer) {
 
         // pack args with tag string
-        args = data.length>0?[tagString, message, ...data]:[tagString, message];
+        args = data.length>0?
+            [tagString, indentedMessage, ...data]:[tagString, indentedMessage];
       }
     }
-  }
 
-  // if one of the tags is error
-  if (_.contains(tags, 'error')) {
-
-    // always log an error on the console
+    // if using standard streams
     if (isStandardStreams) {
-      console.error(...args);
-    }
-    else {
-      console.log(...args);
-    }
-  }
-  else {
 
-    //if none of the tags are in the do not log list
-    const muted = _.filter(tags, (tag) => {
-      return _.contains(mutedTags, tag);
-    });
-    if (muted.length === 0) {
-
-      // if using standard streams
-      if (isStandardStreams) {
-
-        //log on console using default io streams
-        if (_.contains(tags, 'warning')) {
-          console.warn(...args);
-        }
-        else if (_.contains(tags, 'information')) {
-          console.info(...args);
-        }
-        else {
-          console.log(...args);
-        }
+      //log on console using default io streams
+      if (_.contains(tags, 'warning')) {
+        console.warn(...args);
       }
-
-      // else - not using standard streams
+      else if (_.contains(tags, 'information')) {
+        console.info(...args);
+      }
       else {
-
-        // log everything on the log stream
         console.log(...args);
       }
     }
+
+    // else - not using standard streams
+    else {
+
+      // log everything on the log stream
+      console.log(...args);
+    }
   }
 
-  //polymorphic database logging
+  // polymorphic database logging
+  // this assumes the log is not writeable on the client!
+  // @TODO this is not neccesary if anyone can write to the log collection
   Meteor.call('log', tags, message, data);
 
   //throw meteor errors for logs with error codes
@@ -355,6 +416,7 @@ export default {
   messageIndent: messageIndent,
   mute: mute,
   show: show,
+  showAll: showAll,
   log: log,
   info: info,
   warn: warn,
