@@ -11,7 +11,7 @@ Log = LogApi;
 // Meteor.startup(() => {
 
 // define global mongo db collection
-Logs = new Mongo.Collection('Logs');
+Logs = new Mongo.Collection('logs');
 
 /**
  * Normalise data for persistance so that db queries can also be saved.
