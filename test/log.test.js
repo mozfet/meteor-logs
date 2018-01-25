@@ -124,6 +124,9 @@ if(Meteor.isServer) {
       // log something
       Log.log(['debug'],'Hello');
 
+      // reset the indent
+      Log.messageIndent(0);
+
       // evaluate the result
       test.equal(consoleLogArgs.length, 2, 'Expected 2 arguments.');
       test.equal(consoleLogArgs[0], 'debug', 'Expected first argument to be the tag');
@@ -211,6 +214,36 @@ Tinytest.add(
 
     // restore the sandbox
     sandbox.restore();
+  }
+);
+
+Tinytest.add(
+  'MeteorLogs - Custom tags muted and then shown on Console',
+  function (test) {
+
+    // create a spy on the console
+    const spy = Sinon.spy(console, 'log');
+
+    // mute foo
+    Log.mute(['foo']);
+
+    // log something with foo
+    Log.log(['foo', 'bar'], 'This should be muted on the console.');
+
+    // evaluate the result
+    test.equal(spy.callCount, 0, 'Unexpected call of console log.');
+
+    //show foo
+    Log.show(['foo']);
+
+    // log something with foo
+    Log.log(['foo', 'bar'], 'This should be shown on the console');
+
+    // evaluate the result
+    test.equal(spy.callCount, 1, 'Expected console log function to have been called once.');
+
+    // restore the console log
+    spy.restore();
   }
 );
 

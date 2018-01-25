@@ -13,7 +13,11 @@ Log = LogApi;
 // define global mongo db collection
 Logs = new Mongo.Collection('Logs');
 
-// function to prepare data for persistance
+/**
+ * Normalise data for persistance so that db queries can also be saved.
+ * @param {object} document - The document to Normalize
+ * @returns {object} The normalized document.
+ **/
 const normalizeForPersistance = (document) => {
   renameKeys(document, function(key) {
     switch(key) {

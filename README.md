@@ -199,6 +199,15 @@ to install or include Chalk.
 Note that changing the color of a tag on the client does not change the color of
 the tag on the server, unless it is done in imports/startup/both.
 
+## Suppress color on host that do not support it, ala Galaxy Logs
+settings.json
+{
+  "host": {
+    "name": "Galaxy",
+    "supportsColorLogs": false    
+  }
+}
+
 ## Atmosphere Package
 
 ### Installation

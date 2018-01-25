@@ -94,8 +94,14 @@ const buildTagString = (tags) => {
      // find color object
      const obj = colors[tag];
 
-     // if color object exists
-     if (obj) {
+     // if color object exists and host supports color
+     let supportsColor = true;
+     if (Meteor.isServer) {
+       supportsColor = Meteor.settings.host &&
+          !_.isUndefined(Meteor.settings.host.supportsColorLogs)?
+          Meteor.settings.host.supportsColorLogs:supportsColor;
+     }
+     if (obj && supportsColor) {
 
        const isColor = _.isString(obj.color);
        const isBgColor = _.isString(obj.bgColor);
@@ -238,8 +244,9 @@ const logOnConsole = (tags) => {
 
     // if any of the tags are in the muted tags list
     const mutedTag = _.find(tags, (tag) => {
-      return _.contains(mutedTages, 'tag');
+      return _.contains(mutedTags, tag);
     });
+
     if (mutedTag) {
 
       //return false
