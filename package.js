@@ -1,11 +1,12 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
   summary: 'Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.',
-  version: '0.1.2',
+  version: '0.1.10',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 
 Npm.depends({
+  'escape-string-regexp': '1.0.5',
   'chalk': '2.3.0',
   'deep-rename-keys': '0.2.1',
   'ansi_up': '2.0.2'

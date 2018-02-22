@@ -28,38 +28,38 @@ const normalizeForPersistance = (document) => {
   });
 };
 
-// define meteor methods
-Meteor.methods({
-  log: (channels, message, data) => {
-
-    //normalise the data for persistance
-    const normalizedData = normalizeForPersistance(data);
-
-    //insert log into db
-    Logs.insert({
-      time: new Date(),
-      userId: Meteor.userId(),
-      channels: channels,
-      message: message,
-      data: normalizedData
-    });
-  },
-  'log.channels': () => {
-    let channels = Logs.aggregate([
-      {$unwind: '$channels'},
-      {$group: {_id: '$channels'}}
-    ]);
-    channels = _.map(channels, (channel) => {return channel._id;});
-    console.log('log.channels:', channels);
-    return channels;
-  },
-  'log.clear': () => {
-    Logs.remove({});
-  }
-});
-
 // if in meteor server environment
 if (Meteor.isServer) {
+
+  // define meteor methods
+  Meteor.methods({
+    log: (tags, message, data) => {
+
+      //normalise the data for persistance
+      const normalizedData = normalizeForPersistance(data);
+
+      //insert log into db
+      Logs.insert({
+        time: new Date(),
+        userId: Meteor.userId(),
+        tags: tags,
+        message: message,
+        data: normalizedData
+      });
+    },
+    'log.tags': () => {
+      let tags = Logs.aggregate([
+        {$unwind: '$tags'},
+        {$group: {_id: '$tags'}}
+      ]);
+      tags = _.map(tags, (tag) => {return tag._id;});
+      // console.log('log.tags:', tags);
+      return tags;
+    },
+    'log.clear': () => {
+      Logs.remove({});
+    }
+  });
 
   // allow on admin to insert, update and remove on client
   Logs.allow(Access.anyInsertAdminUpdateRemove);
