@@ -40,20 +40,45 @@ function styledConsoleLog() {
     return argArray;
 }
 
-
 /**
- * Normalise data for persistance so that db queries can also be saved.
- * @param {object} document - The document to Normalize
- * @returns {object} The normalized document.
+ * Normalise an object for printing and persistance.
+ * @param object {any} - an object to be normalised, safe from mutation
+ * @returns {any} - normalised deep clone of input object
  **/
-const normalizeForPersistance = (document) => {
-  renameKeys(document, function(key) {
-    switch(key) {
-      case '$set': return 'SET';
-      case '$push': return 'PUSH';
-      default: return key;
+
+const normalize = (object, level) => {
+  level = _.isNumber(level)?level+1:0;
+  if (level > 10) {
+    return 'DEEP';
+  }
+  if (_.isUndefined(object)) {
+    return 'UNDEFINED';
+  }
+  if (_.isFunction(object)) {
+    return 'FUNCTION';
+  }
+  if (_.isArray(object)) {
+    const clone = [];
+    for (let child of object) {
+      clone.push(normalize(child), level);
     }
-  });
+    return clone;
+  }
+  if (_.isObject(object)) {
+    const clone = {};
+    const childKeys = _.keys(object);
+    for (let key of childKeys) {
+      let cloneChildKey;
+      switch (key) {
+        case '$set': cloneChildKey = 'set'; break;
+        case '$push': cloneChildKey = 'push'; break;
+        default: break;
+      }
+      clone[cloneChildKey] = normalize(object[key], level);
+    }
+    return clone;
+  }
+  return object;
 };
 
 /**
@@ -78,17 +103,13 @@ const normalizeForPersistance = (document) => {
  * @param {string[]} tags - The tags to mute on the console.
  **/
 let mutedTags = [];
-const mute = (tags) => {
-  mutedTags = _.union(mutedTags, tags);
-};
+const mute = tags => { mutedTags = _.union(mutedTags, tags); };
 
 /**
  * Unmute tags.
  * @param {string[]} tags - The tags to show on the console.
  **/
-const show = (tags) => {
-  mutedTags = _.without(mutedTags, ...tags);
-};
+const show = tags => { mutedTags = _.without(mutedTags, ...tags); };
 
 /**
  * Show all tags.
@@ -361,16 +382,13 @@ const log = (tags, message, ...data) => {
         // console.log('args:', args);
       }
 
-      // else - not client
+      // else - not client, thus server
       else {
-
-        // if server
-        if (Meteor.isServer) {
 
           // pack args with tag string
           args = data.length>0?
-              [tagString, indentedMessage, ...data]:[tagString, indentedMessage];
-        }
+              [tagString, indentedMessage, ...data]:
+              [tagString, indentedMessage];
       }
 
       // if using standard streams
@@ -396,38 +414,28 @@ const log = (tags, message, ...data) => {
       }
     }
 
-    // polymorphic database logging
-    // this assumes the log is not writeable on the client!
-    // @TODO this is not neccesary if anyone can write to the log collection
-    if (Meteor.isClient) {
-      Meteor.call('log', tags, message, data);
-    }
-
-    // else - server
-    else {
-
-      //normalise the data for persistance
-      const normalizedData = normalizeForPersistance(data);
-
-      // insert with user id if it exists
-      // user id is not available server side outside publications and methods
-      try {
-        const userId = Meteor.userId();
-        Logs.insert({
-          time: new Date(),
-          userId: Meteor.userId(),
-          tags: tags,
-          message: message,
-          data: normalizedData
-        });
-      } catch (e) {
-        Logs.insert({
-          time: new Date(),
-          tags: tags,
-          message: message,
-          data: normalizedData
-        });
-      }
+    //normalise the data for persistance
+    // console.log('data to normalize:', data);
+    const normalizedData = normalize(data);
+    
+    // insert with user id if it exists
+    // user id is not available server side outside publications and methods
+    try {
+      const userId = Meteor.userId();
+      Logs.insert({
+        time: new Date(),
+        userId: Meteor.userId(),
+        tags: tags,
+        message: message,
+        data: normalizedData
+      });
+    } catch (e) {
+      Logs.insert({
+        time: new Date(),
+        tags: tags,
+        message: message,
+        data: normalizedData
+      });
     }
   }
 

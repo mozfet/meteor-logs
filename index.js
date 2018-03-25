@@ -33,20 +33,20 @@ if (Meteor.isServer) {
 
   // define meteor methods
   Meteor.methods({
-    log: (tags, message, data) => {
-
-      //normalise the data for persistance
-      const normalizedData = normalizeForPersistance(data);
-
-      //insert log into db
-      Logs.insert({
-        time: new Date(),
-        userId: Meteor.userId(),
-        tags: tags,
-        message: message,
-        data: normalizedData
-      });
-    },
+    // log: (tags, message, data) => {
+    //
+    //   //normalise the data for persistance
+    //   const normalizedData = normalizeForPersistance(data);
+    //
+    //   //insert log into db
+    //   Logs.insert({
+    //     time: new Date(),
+    //     userId: Meteor.userId(),
+    //     tags: tags,
+    //     message: message,
+    //     data: normalizedData
+    //   });
+    // },
     'log.tags': () => {
       let tags = Logs.aggregate([
         {$unwind: '$tags'},
