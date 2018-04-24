@@ -260,50 +260,51 @@ const buildMessageString = (tags, tagString, message, messageIndent) => {
 };
 
 /**
- * Returns true if this log entry should be streamed to the console
- * @param {string[]} tags - the tags used to decide whether or not to stream
- * @returns {boolean} - true if the entry should be streamed
+ * Returns true if the log should be muted
+ * @param {string[]} tags - the log tags
+ * @returns {boolean} - true if log should be muted
  **/
-const logOnConsole = (tags) => {
+const isMuted = (tags) => {
 
-  // if tags include debug
-  if (_.contains(tags, 'debug')) {
+  // if tags include debug and the environment is production
+  if (_.contains(tags, 'debug') && Meteor.settings.public.isProduction) {
 
-    // if environment is PROD
-    if (Meteor.settings.public.isProduction) {
+    // return true
+    return true;
+  }
+
+  // if information tag is present
+  if (_.contains(tags, 'information')) {
+
+    // return true
+  }
+
+  // if there are muted tags
+  if (mutedTags.length > 0) {
+
+    // if any of the log tags are in the muted tags list
+    const mutedTag = _.find(tags, (tag) => {
+      return _.contains(mutedTags, tag);
+    });
+    if (mutedTag) {
+
+      // return true
+      return true;
+    }
+
+    // else
+    else {
 
       // return false
       return false;
     }
   }
 
-  // if there are muted tags
-  if (mutedTags.length > 0) {
-
-    // if any of the tags are in the muted tags list
-    const mutedTag = _.find(tags, (tag) => {
-      return _.contains(mutedTags, tag);
-    });
-
-    if (mutedTag) {
-
-      //return false
-      return false;
-    }
-
-    //else
-    else {
-
-      //return true
-      return true;
-    }
-  }
-
-  // else - there are no muted tags
+  // else - there are no muted tags configured
   else {
 
-    // return true
-    return true;
+    // return false
+    return false;
   }
 };
 
@@ -353,77 +354,81 @@ const color = (tag, color, bgColor) => {
  **/
 const log = (tags, message, ...data) => {
 
-  // if not debug on prod
-  if (!(_.contains(tags, 'debug') && Meteor.settings.public.isProduction)) {
+  // determine server time
+  const time = new Date();
 
-    // if logging on the console
-    if (logOnConsole(tags)) {
+  // if log is not muted
+  if (!isMuted(tags)) {
 
-      // define ES2015 template literal for use with Chalk
-      let tagString = buildTagString(tags);
+    // define ES2015 template literal for use with Chalk
+    let tagString = buildTagString(tags);
 
-      // prepend tag string, indent and pack message
-      let indentedMessage = buildMessageString(tags, tagString, message,
-          messageIndentSize);
+    // prepend tag string, indent and pack message
+    let indentedMessage = buildMessageString(tags, tagString, message,
+        messageIndentSize);
 
-      // if client environment
-      let args, tagArgs;
-      if (Meteor.isClient) {
+    // if client environment
+    let args, tagArgs;
+    if (Meteor.isClient) {
 
-        // convert ansi tag string to html
-        const tagHtml = ansi_up.ansi_to_html(tagString);
-        tagArgs = styledConsoleLog(tagHtml);
+      // convert ansi tag string to html
+      const tagHtml = ansi_up.ansi_to_html(tagString);
+      tagArgs = styledConsoleLog(tagHtml);
 
-        // add message string to the first tag argument
-        tagArgs[0] = tagArgs[0] + indentedMessage;
+      // add message string to the first tag argument
+      tagArgs[0] = tagArgs[0] + indentedMessage;
 
-        // pack args with deconstructed tag args and data
-        args = data.length>0?[...tagArgs, ...data]:[...tagArgs];
-        // console.log('args:', args);
+      // pack args with deconstructed tag args and data
+      args = data.length>0?[...tagArgs, ...data]:[...tagArgs];
+      // console.log('args:', args);
+    }
+
+    // else - not client, thus server
+    else {
+
+        // pack args with tag string
+        args = data.length>0?
+            [tagString, indentedMessage, ...data]:
+            [tagString, indentedMessage];
+    }
+
+    // if using standard streams
+    if (isStandardStreams) {
+
+      //log on console using default io streams
+      if (_.contains(tags, 'warning')) {
+        console.warn(...args);
       }
-
-      // else - not client, thus server
+      else if (_.contains(tags, 'information')) {
+        console.info(...args);
+      }
       else {
-
-          // pack args with tag string
-          args = data.length>0?
-              [tagString, indentedMessage, ...data]:
-              [tagString, indentedMessage];
-      }
-
-      // if using standard streams
-      if (isStandardStreams) {
-
-        //log on console using default io streams
-        if (_.contains(tags, 'warning')) {
-          console.warn(...args);
-        }
-        else if (_.contains(tags, 'information')) {
-          console.info(...args);
-        }
-        else {
-          console.log(...args);
-        }
-      }
-
-      // else - not using standard streams
-      else {
-
-        // log everything on the log stream
         console.log(...args);
       }
+    }
+
+    // else - not using standard streams
+    else {
+
+      // log everything on the log stream
+      console.log(...args);
     }
 
     //normalise the data for persistance
     // console.log('data to normalize:', data);
     const normalizedData = normalize(data);
-    
+
+    // determine the node type
+    const node = Meteor.isClient?'client':'server';
+
     // insert with user id if it exists
     // user id is not available server side outside publications and methods
     try {
       const userId = Meteor.userId();
+
       Logs.insert({
-        time: new Date(),
+        time,
+        node,
         userId: Meteor.userId(),
         tags: tags,
         message: message,
@@ -431,7 +436,8 @@ const log = (tags, message, ...data) => {
       });
     } catch (e) {
       Logs.insert({
-        time: new Date(),
+        time,
+        node,
         tags: tags,
         message: message,
         data: normalizedData

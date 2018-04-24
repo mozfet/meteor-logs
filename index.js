@@ -65,10 +65,21 @@ if (Meteor.isServer) {
   Logs.allow(Access.anyInsertAdminUpdateRemove);
 
   // publish logs to admin users
-  Meteor.publish('logs', () => {
+  Meteor.publish('logs', (state) => {
     if (Access.isAdmin()) {
-      const logs = Logs.find({});
-      console.log('publishing '+logs.count()+' logs for admin user');
+      // console.log('publish logs for state', state);
+      const logs = Logs.find(
+        {
+          time: {
+            $gte: state.start,
+            $lt: state.end
+          }
+        },
+        {
+          limit: state.limit,
+          sort: {time: -1}
+        }
+      );
       return logs;
     }
     return undefined;

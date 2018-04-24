@@ -2,17 +2,16 @@
 
 Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.
 
-Features include filtered color tags, managed io-streams and indenting on the console. Cross platform logs are stored in MongoDB and presented to admin users using Blaze templates.
+Features include colorful filtered tags, and indenting on server io-streams as well as on the client javascript browser console. Cross platform logs are stored in MongoDB and presented to admin users using Blaze templates.
 
-Ideal for test driven development, logging intensive applications, and production monitoring.
+Ideal for debugging, test driven development, logging intensive applications, and production monitoring.
 
 Logs can be created from anywhere in client or server code, startup and runtime,
 even inside methods. Logs with debug tags are automatically and completely
-ignored on production environments. Logs with error tags automatically throw errors, and cross platform logs are only accessible by Meteor users with admin
-roles.
+ignored on production environments. Logs with error tags automatically throw Meteor.Error with the log message, and database logs are only accessible by Meteor users with admin roles.
 
-Templates are included for logging from Blaze templates, and for searching and
-presenting filtering logs. (Coming Soon)
+Blaze Templates will soon be added with searching and
+filtering logs, filtering for the database and console is possible by using mute and force configurations (see below).
 
 ## Sponsor
 
@@ -26,7 +25,7 @@ presenting filtering logs. (Coming Soon)
 ### Server - Bash Command Line Terminal (tested on OSX)
 ![Screenshot Server Terminal Console on OSX](assets/bash-terminal.png)
 
-### Code
+### Configuration (client/server/both)
 ```
 Log.log([], 'No tags.');
 
@@ -167,7 +166,7 @@ Log.log(['debug', 'someFeature'],
 
 ## Smart Errors
 
-Logging an error automatically throws an exception.
+Logging an error automatically throws a ```Meteor.Error```.
 
 ## Tag filtering on the console
 
