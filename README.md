@@ -241,3 +241,8 @@ Inside any code on the client or server:
 import Log from 'meteor-logs';
 Log.info('Using Node Package Manager makes it standard.');
 ```
+
+# Build and publication notes
+
+Build Meteor Atmospher package from the project folder:
+```meteor publish```
