@@ -1,32 +1,33 @@
-/*jshint esversion: 6 */
-import { _ } from 'underscore';
-import { Meteor } from 'meteor/meteor';
-import Chalk from 'chalk';
-import AnsiUp from 'ansi_up';
-import renameKeys from 'deep-rename-keys';
+import { _ } from 'underscore'
+import { Meteor } from 'meteor/meteor'
+import 'escape-string-regexp'
+import Chalk from 'chalk'
+import AnsiUp from 'ansi_up'
+import renameKeys from 'deep-rename-keys'
 
-let ansi_up;
+
+let ansi_up
 if(Meteor.isClient) {
-  ansi_up = new AnsiUp();
+  ansi_up = new AnsiUp()
 }
 
 // init chalk instance and force it to use 256 colors
-const chalk = new Chalk.constructor({enabled: true, level: 2});
+const chalk = new Chalk.constructor({enabled: true, level: 2})
 
 // @see https://github.com/hansifer/ConsoleFlair/blob/master/src/consoleFlair.js
 function styledConsoleLog() {
-    var argArray = [];
+    var argArray = []
 
     if (arguments.length) {
-        var startTagRe = /<span\s+style=(['"])([^'"]*)\1\s*>/gi;
-        var endTagRe = /<\/span>/gi;
+        var startTagRe = /<span\s+style=(['"])([^'"]*)\1\s*>/gi
+        var endTagRe = /<\/span>/gi
 
-        var reResultArray;
+        var reResultArray
         argArray.push(arguments[0].replace(startTagRe, '%c').
-            replace(endTagRe, '%c'));
+            replace(endTagRe, '%c'))
         while (reResultArray = startTagRe.exec(arguments[0])) {
-            argArray.push(reResultArray[2]);
-            argArray.push('');
+            argArray.push(reResultArray[2])
+            argArray.push('')
         }
 
         // pass through subsequent args since chrome dev tools does not (yet)
@@ -47,76 +48,76 @@ function styledConsoleLog() {
  **/
 
 const normalize = (object, level) => {
-  level = _.isNumber(level)?level+1:0;
+  level = _.isNumber(level)?level+1:0
   if (level > 10) {
-    return 'DEEP';
+    return 'DEEP'
   }
   if (_.isUndefined(object)) {
-    return 'UNDEFINED';
+    return 'UNDEFINED'
   }
   if (_.isFunction(object)) {
-    return 'FUNCTION';
+    return 'FUNCTION'
   }
   if (_.isArray(object)) {
-    const clone = [];
+    const clone = []
     for (let child of object) {
-      clone.push(normalize(child), level);
+      clone.push(normalize(child), level)
     }
-    return clone;
+    return clone
   }
   if (_.isObject(object)) {
-    const clone = {};
-    const childKeys = _.keys(object);
+    const clone = {}
+    const childKeys = _.keys(object)
     for (let key of childKeys) {
-      let cloneChildKey;
+      let cloneChildKey
       switch (key) {
-        case '$set': cloneChildKey = 'set'; break;
-        case '$push': cloneChildKey = 'push'; break;
-        default: break;
+        case '$set': cloneChildKey = 'set'; break
+        case '$push': cloneChildKey = 'push'; break
+        default: break
       }
-      clone[cloneChildKey] = normalize(object[key], level);
+      clone[cloneChildKey] = normalize(object[key], level)
     }
-    return clone;
+    return clone
   }
-  return object;
-};
+  return object
+}
 
 /**
  * Use standard streams for logging on the console?
  * Default is true
  **/
- let isStandardStreams = true;
+ let isStandardStreams = true
  const standardStreams = (state) => {
-   isStandardStreams = state;
- };
+   isStandardStreams = state
+ }
 
 /**
  * Indent the message?
  **/
- let messageIndentSize = 0;
+ let messageIndentSize = 0
  const messageIndent = (size) => {
-   messageIndentSize = size;
- };
+   messageIndentSize = size
+ }
 
 /**
  * Muted tags are not logged on the console, but they are logged in the DB
  * @param {string[]} tags - The tags to mute on the console.
  **/
-let mutedTags = [];
-const mute = tags => { mutedTags = _.union(mutedTags, tags); };
+let mutedTags = []
+const mute = tags => { mutedTags = _.union(mutedTags, tags) }
 
 /**
  * Unmute tags.
  * @param {string[]} tags - The tags to show on the console.
  **/
-const show = tags => { mutedTags = _.without(mutedTags, ...tags); };
+const show = tags => { mutedTags = _.without(mutedTags, ...tags) }
 
 /**
  * Show all tags.
  **/
 const showAll = () => {
-  mutedTags = [];
-};
+  mutedTags = []
+}
 
 /**
  * Build a tag string with colors for the platform and environment
@@ -126,51 +127,51 @@ const showAll = () => {
 const buildTagString = (tags) => {
 
    // for each tag
-   let tagString = '';
+   let tagString = ''
    for (let tag of tags) {
 
      // find color object
-     const obj = colors[tag];
+     const obj = colors[tag]
 
      // if color object exists and host supports color
-     let supportsColor = true;
+     let supportsColor = true
      if (Meteor.isServer) {
        supportsColor = Meteor.settings.host &&
           !_.isUndefined(Meteor.settings.host.supportsColorLogs)?
-          Meteor.settings.host.supportsColorLogs:supportsColor;
+          Meteor.settings.host.supportsColorLogs:supportsColor
      }
      if (obj && supportsColor) {
 
-       const isColor = _.isString(obj.color);
-       const isBgColor = _.isString(obj.bgColor);
+       const isColor = _.isString(obj.color)
+       const isBgColor = _.isString(obj.bgColor)
 
        // if text color and bgColor
        if (isColor && isBgColor) {
 
          // nested chalk tag using color in bgColor
          tagString +=
-             `${chalk.keyword(obj.color)(chalk.bgKeyword(obj.bgColor)(tag))} `;
+             `${chalk.keyword(obj.color)(chalk.bgKeyword(obj.bgColor)(tag))} `
        }
 
        // else if text color is a function
        else if (isColor) {
 
          // chalk and append tag with color to tag string
-         tagString += `${chalk.keyword(obj.color)(tag)} `;
+         tagString += `${chalk.keyword(obj.color)(tag)} `
        }
 
        // else if background color is a function
        else if (isBgColor) {
 
          // chalk and append tag with background color to tag string
-         tagString += `${chalk.bgKeyword(obj.bgColor)(tag)} `;
+         tagString += `${chalk.bgKeyword(obj.bgColor)(tag)} `
        }
 
        // else
        else {
 
          // append the tag
-         tagString += tag+' ';
+         tagString += tag+' '
        }
      }
 
@@ -178,16 +179,16 @@ const buildTagString = (tags) => {
      else {
 
        // append the tag
-       tagString += tag+' ';
+       tagString += tag+' '
      }
    }
 
    // trim whitespace of tag string
-   tagString = tagString.trim();
+   tagString = tagString.trim()
 
    //return tag string
-   return tagString;
-};
+   return tagString
+}
 
 /**
  * Build an indented message.
@@ -205,19 +206,19 @@ const buildMessageString = (tags, tagString, message, messageIndent) => {
     if (messageIndent>0) {
 
       // generate padding
-      let padding = '';
-      const iSize = Meteor.isServer?(messageIndent+3):(messageIndent+2);
+      let padding = ''
+      const iSize = Meteor.isServer?(messageIndent+3):(messageIndent+2)
       for(let i = 0; i < iSize; i++) { padding+=' '; }
 
       // left pad the message
-      message = padding + ': '+ message;
+      message = padding + ': '+ message
     }
 
     // else - message is not indented
     else {
 
       // add seperator
-      message = message;
+      message = message
     }
   }
 
@@ -228,36 +229,36 @@ const buildMessageString = (tags, tagString, message, messageIndent) => {
     if (messageIndentSize>0) {
 
       // calculate the string lengths of tags
-      let tagsLength = 0;
+      let tagsLength = 0
       for(let tag of tags) {
-        tagsLength += tag.length+1;
+        tagsLength += tag.length+1
       }
-      tagsLength-=1;
+      tagsLength-=1
 
       // calculate padding size
-      let paddingSize = messageIndentSize - tagsLength;
+      let paddingSize = messageIndentSize - tagsLength
 
       // normalise padding
-      paddingSize = paddingSize>0?paddingSize:0;
+      paddingSize = paddingSize>0?paddingSize:0
 
       // generate padding
-      let padding = '';
+      let padding = ''
       for(let i = 0; i < paddingSize; i++) { padding+=' '; }
 
       // left pad the message
-      message = padding + ': ' + message;
+      message = padding + ': ' + message
     }
 
     // else - message is not indented
     else {
 
       // add seperator
-      message = ': ' + message;
+      message = ': ' + message
     }
   }
 
-  return message;
-};
+  return message
+}
 
 /**
  * Returns true if the log should be muted
@@ -267,16 +268,48 @@ const buildMessageString = (tags, tagString, message, messageIndent) => {
 const isMuted = (tags) => {
 
   // if tags include debug and the environment is production
-  if (_.contains(tags, 'debug') && Meteor.settings.public.isProduction) {
+  if (_.contains(tags, 'debug') && Meteor.settings.public.muteDebugLogging) {
 
     // return true
-    return true;
+    return true
   }
 
   // if information tag is present
   if (_.contains(tags, 'information')) {
 
-    // return true
+    // do not mute information
+    return false
+  }
+
+  // if warning tag is present
+  if (_.contains(tags, 'warning')) {
+
+    // do not mute warnings
+    return false
+  }
+
+  // if error tag is present
+  if (_.contains(tags, 'error')) {
+
+    // do not mute errors
+    return false
+  }
+
+  // if tag is important
+  const isImportant = !_.chain(tags)
+      .filter(tag => {
+        switch(tag) {
+          case 'information':
+          case 'error':
+          case 'warning':
+            return true
+          default: return false
+        }
+      }).isEmpty().value()
+  if (isImportant) {
+
+    // do not mute important tags
+    return false
   }
 
   // if there are muted tags
@@ -284,19 +317,19 @@ const isMuted = (tags) => {
 
     // if any of the log tags are in the muted tags list
     const mutedTag = _.find(tags, (tag) => {
-      return _.contains(mutedTags, tag);
-    });
+      return _.contains(mutedTags, tag)
+    })
     if (mutedTag) {
 
       // return true
-      return true;
+      return true
     }
 
     // else
     else {
 
       // return false
-      return false;
+      return false
     }
   }
 
@@ -304,9 +337,9 @@ const isMuted = (tags) => {
   else {
 
     // return false
-    return false;
+    return false
   }
-};
+}
 
 /**
  * Color a tag using Chalk.
@@ -315,35 +348,35 @@ const isMuted = (tags) => {
  * @param {string} bgColor - The Chalk background color, e.g 'bgYellow'.
  * @see {@link https://github.com/chalk/chalk|Chalk}
  * @example
- * // Log.color('error', 'white', 'bgRed);
- * // Log.log(['error'], 'This error and all following logs with error tags');
- * // Log.log(['error'], 'will be white text on a red background.');
+ * // Log.color('error', 'white', 'bgRed)
+ * // Log.log(['error'], 'This error and all following logs with error tags')
+ * // Log.log(['error'], 'will be white text on a red background.')
  * @returns {undefined} Returns undefined.
  *
  **/
-let colors = {};
+let colors = {}
 const color = (tag, color, bgColor) => {
 
   // find or create object using tag as color key
-  let obj = colors[tag] = tag&&colors[tag]?colors[tag]:{};
+  let obj = colors[tag] = tag&&colors[tag]?colors[tag]:{}
 
   // if a color is provided
   if(color && _.isString(color)) {
 
     // assign the color to the tag color object
-    obj.color = color;
+    obj.color = color
   }
 
   // if a background color is provided
   if (bgColor && _.isString(bgColor)) {
 
     // assign the background color to the object
-    obj.bgColor = bgColor;
+    obj.bgColor = bgColor
   }
 
   // return undefined
-  return undefined;
-};
+  return undefined
+}
 
 /**
  * Core polymorphic API to log a message with tags and data.
@@ -355,32 +388,32 @@ const color = (tag, color, bgColor) => {
 const log = (tags, message, ...data) => {
 
   // determine server time
-  const time = new Date();
+  const time = new Date()
 
   // if log is not muted
   if (!isMuted(tags)) {
 
     // define ES2015 template literal for use with Chalk
-    let tagString = buildTagString(tags);
+    let tagString = buildTagString(tags)
 
     // prepend tag string, indent and pack message
     let indentedMessage = buildMessageString(tags, tagString, message,
-        messageIndentSize);
+        messageIndentSize)
 
     // if client environment
-    let args, tagArgs;
+    let args, tagArgs
     if (Meteor.isClient) {
 
       // convert ansi tag string to html
-      const tagHtml = ansi_up.ansi_to_html(tagString);
-      tagArgs = styledConsoleLog(tagHtml);
+      const tagHtml = ansi_up.ansi_to_html(tagString)
+      tagArgs = styledConsoleLog(tagHtml)
 
       // add message string to the first tag argument
-      tagArgs[0] = tagArgs[0] + indentedMessage;
+      tagArgs[0] = tagArgs[0] + indentedMessage
 
       // pack args with deconstructed tag args and data
-      args = data.length>0?[...tagArgs, ...data]:[...tagArgs];
-      // console.log('args:', args);
+      args = data.length>0?[...tagArgs, ...data]:[...tagArgs]
+      // console.log('args:', args)
     }
 
     // else - not client, thus server
@@ -389,7 +422,7 @@ const log = (tags, message, ...data) => {
         // pack args with tag string
         args = data.length>0?
             [tagString, indentedMessage, ...data]:
-            [tagString, indentedMessage];
+            [tagString, indentedMessage]
     }
 
     // if using standard streams
@@ -397,13 +430,13 @@ const log = (tags, message, ...data) => {
 
       //log on console using default io streams
       if (_.contains(tags, 'warning')) {
-        console.warn(...args);
+        console.warn(...args)
       }
       else if (_.contains(tags, 'information')) {
-        console.info(...args);
+        console.info(...args)
       }
       else {
-        console.log(...args);
+        console.log(...args)
       }
     }
 
@@ -411,20 +444,20 @@ const log = (tags, message, ...data) => {
     else {
 
       // log everything on the log stream
-      console.log(...args);
+      console.log(...args)
     }
 
     //normalise the data for persistance
-    // console.log('data to normalize:', data);
-    const normalizedData = normalize(data);
+    // console.log('data to normalize:', data)
+    const normalizedData = normalize(data)
 
     // determine the node type
-    const node = Meteor.isClient?'client':'server';
+    const node = Meteor.isClient?'client':'server'
 
     // insert with user id if it exists
     // user id is not available server side outside publications and methods
     try {
-      const userId = Meteor.userId();
+      const userId = Meteor.userId()
 
       Logs.insert({
         time,
@@ -433,7 +466,7 @@ const log = (tags, message, ...data) => {
         tags: tags,
         message: message,
         data: normalizedData
-      });
+      })
     } catch (e) {
       Logs.insert({
         time,
@@ -441,43 +474,43 @@ const log = (tags, message, ...data) => {
         tags: tags,
         message: message,
         data: normalizedData
-      });
+      })
     }
   }
 
   //throw meteor errors for logs with error codes
   if (_.contains(tags, 'error')) {
-    throw new Meteor.Error(message, data);
+    throw new Meteor.Error(message, data)
   }
-};
+}
 
 /**
  *
  **/
 const info = (msg, ...data) => {
-  log(['information'], msg, ...data);
-};
+  log(['information'], msg, ...data)
+}
 
 /**
  *
  **/
 const warn = (msg, ...data) => {
-  log(['warning'], msg, ...data);
-};
+  log(['warning'], msg, ...data)
+}
 
 /**
  *
  **/
 const error = (msg, ...data) => {
-  log(['error'], msg, ...data);
-};
+  log(['error'], msg, ...data)
+}
 
 /**
  *
  **/
 const debug = (msg, ...data) => {
-  log(['debug'], msg, ...data);
-};
+  log(['debug'], msg, ...data)
+}
 
 /**
  * Export API as Default
@@ -494,4 +527,4 @@ export default {
   error: error,
   debug: debug,
   color: color
-};
+}
