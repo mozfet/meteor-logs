@@ -1,18 +1,97 @@
-import { _ } from 'underscore'
+// imports
 import { Meteor } from 'meteor/meteor'
+import { Mongo } from 'meteor/mongo'
+import { _ } from 'meteor/underscore'
+import { Access } from 'meteor/mozfet:access'
 import 'escape-string-regexp'
 import Chalk from 'chalk'
 import AnsiUp from 'ansi_up'
 import renameKeys from 'deep-rename-keys'
 
-
+// init ansi up on client
 let ansi_up
-if(Meteor.isClient) {
+if (Meteor.isClient) {
   ansi_up = new AnsiUp()
 }
 
 // init chalk instance and force it to use 256 colors
 const chalk = new Chalk.constructor({enabled: true, level: 2})
+
+// create mongodb collection
+const logs = new Mongo.Collection('logs');
+
+/**
+ * Normalise data for persistance so that db queries can also be saved.
+ * @param {object} document - The document to Normalize
+ * @returns {object} The normalized document.
+ **/
+const normalizeForPersistance = (document) => {
+  renameKeys(document, function(key) {
+    switch(key) {
+      case '$set': return 'SET';
+      case '$push': return 'PUSH';
+      default: return key;
+    }
+  });
+};
+
+// if in meteor server environment
+if (Meteor.isServer) {
+
+  // define meteor methods
+  Meteor.methods({
+    // log: (tags, message, data) => {
+    //
+    //   //normalise the data for persistance
+    //   const normalizedData = normalizeForPersistance(data);
+    //
+    //   //insert log into db
+    //   Logs.insert({
+    //     time: new Date(),
+    //     userId: Meteor.userId(),
+    //     tags: tags,
+    //     message: message,
+    //     data: normalizedData
+    //   });
+    // },
+    'log.tags': () => {
+      let tags = logs.aggregate([
+        {$unwind: '$tags'},
+        {$group: {_id: '$tags'}}
+      ]);
+      tags = _.map(tags, (tag) => {return tag._id;});
+      // console.log('log.tags:', tags);
+      return tags;
+    },
+    'log.clear': () => {
+      Logs.remove({});
+    }
+  });
+
+  // allow on admin to insert, update and remove on client
+  logs.allow(Access.anyInsertAdminUpdateRemove);
+
+  // publish logs to admin users
+  Meteor.publish('logs', (state) => {
+    if (Access.isAdmin()) {
+      // console.log('publish logs for state', state);
+      const logs = logs.find(
+        {
+          time: {
+            $gte: state.start,
+            $lt: state.end
+          }
+        },
+        {
+          limit: state.limit,
+          sort: {time: -1}
+        }
+      );
+      return logs;
+    }
+    return undefined;
+  });
+}
 
 // @see https://github.com/hansifer/ConsoleFlair/blob/master/src/consoleFlair.js
 function styledConsoleLog() {
@@ -459,7 +538,7 @@ const log = (tags, message, ...data) => {
     try {
       const userId = Meteor.userId()
 
-      Logs.insert({
+      logs.insert({
         time,
         node,
         userId: Meteor.userId(),
@@ -468,7 +547,7 @@ const log = (tags, message, ...data) => {
         data: normalizedData
       })
     } catch (e) {
-      Logs.insert({
+      logs.insert({
         time,
         node,
         tags: tags,
@@ -515,7 +594,7 @@ const debug = (msg, ...data) => {
 /**
  * Export API as Default
  **/
-export default {
+export const Log = {
   standardStreams: standardStreams,
   messageIndent: messageIndent,
   mute: mute,
