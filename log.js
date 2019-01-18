@@ -64,7 +64,7 @@ if (Meteor.isServer) {
       return tags;
     },
     'log.clear': () => {
-      Logs.remove({});
+      logs.remove({});
     }
   });
 
