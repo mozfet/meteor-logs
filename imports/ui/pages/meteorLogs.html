@@ -1,0 +1,30 @@
+<template name="meteorLogs">
+  <h1>Logs</h1>
+  <!-- {{#if Template.subscriptionsReady}} -->
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Node</th>
+          <th>Tags</th>
+          <th>User ID</th>
+          <th>Message</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each logEntry in logEntries}}
+          <tr>
+            <td>{{date logEntry.time}}</td>
+            <td>{{logEntry.node}}</td>
+            <td>{{logEntry.tags}}</td>
+            <td>{{logEntry.userId}}</td>
+            <td>{{logEntry.message}}</td>
+            <td><pre>{{prettyPrint logEntry.data}}</pre></td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <!-- <button class="js-meteor-logs-show-more-button">Show More</button> -->
+  <!-- {{/if}} -->
+</template>

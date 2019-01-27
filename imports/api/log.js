@@ -18,7 +18,7 @@ if (Meteor.isClient) {
 const chalk = new Chalk.constructor({enabled: true, level: 2})
 
 // create mongodb collection
-const logs = new Mongo.Collection('logs');
+export const logs = new Mongo.Collection('logs')
 
 /**
  * Normalise data for persistance so that db queries can also be saved.
