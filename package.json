@@ -1,6 +1,6 @@
 {
   "name": "meteor-logs",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.",
   "main": "index.js",
   "dependencies": {

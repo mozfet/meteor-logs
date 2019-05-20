@@ -26,7 +26,7 @@ filtering logs, filtering for the database and console is possible by using mute
 ![Screenshot Server Terminal Console on OSX](assets/bash-terminal.png)
 
 ### Configuration (client/server/both)
-```
+```js
 Log.log([], 'No tags.');
 
 Log.log(['tag1', 'tag2'], 'Custom tags without colors.');
