@@ -1,7 +1,7 @@
 Package.describe({
   name: 'mozfet:meteor-logs',
   summary: 'Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.',
-  version: '0.4.1',
+  version: '1.0.0',
   git: 'https://github.com/mozfet/meteor-logs'
 });
 
@@ -27,7 +27,8 @@ Package.onUse(function(api) {
   // client
   api.use([
     'templating@1.3.2',
-    'blaze@2.3.3'
+    'blaze@2.3.3',
+    'msavin:parrot@1.3.0'
   ], 'client');
   api.mainModule('./mainClient.js', 'client');
 
