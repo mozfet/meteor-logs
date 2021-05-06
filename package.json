@@ -4,7 +4,7 @@
   "description": "Cross platform, pretty, filtered, polymorphic, console and database logging for Meteor.",
   "main": "index.js",
   "dependencies": {
-    "underscore": "^1.8.3"
+    "underscore": "^1.12.1"
   },
   "devDependencies": {
     "faker": "4.1.0",
